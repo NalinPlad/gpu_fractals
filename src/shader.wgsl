@@ -40,48 +40,30 @@ fn map_range(from_range_min: f32, from_range_max: f32, to_range_min: f32, to_ran
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
  
-    let x_m = map_range(0.0,f32(u.width),-u.scale,u.scale, in.clip_position.x) - u.x_off;
-    let y_m = map_range(0.0,f32(u.width),-u.scale,u.scale, in.clip_position.y) - u.y_off; 
+    let c = vec2<f32>(
+        map_range(0.0,f32(u.width),-u.scale,u.scale, in.clip_position.x) - u.x_off,
+        map_range(0.0,f32(u.width),-u.scale,u.scale, in.clip_position.y) - u.y_off
+    );
     
-    let max_iterations = 1000;
-    // let aa_samples = 2;
+    var z = vec2<f32>(0.0, 0.0);
+    var n = 0;
 
-    // var col: vec4<f32>;
+    for (var i: i32 = 0; i < 1000; i++) {
+        if (length(z) >= 2.0) {
+            break;
+        }
 
-    // for (var a: i32 = 1; a < aa_samples; a++){ 
-        
-    var x_norm = 0.0;
-    var y_norm = 0.0;
-        
-
-    var iteration = 0;
-
-    while (abs(pow(x_norm,2.0)) + (pow(y_norm, 2.0)) < 4.0 && iteration < max_iterations) {
-        let x_tmp = pow(x_norm, 2.0) - pow(y_norm, 2.0) + x_m;
-
-        y_norm = 2.0 * x_norm * y_norm + y_m;
-        x_norm = x_tmp;
-
-        iteration += 1;
+        z = vec2<f32>(z.x*z.x - z.y*z.y, 2.0*z.x*z.y) + c;
+        n = i;
     }
-        
-    if(iteration == max_iterations) {
-        return vec4<f32>();
-    }
-        
+
     let f = 20.0;
-    let smooth_iter = f32(iteration) + 1.0 - log( log(  pow(x_norm,2.0) + pow(y_norm, 2.0) ) ) / log(2.0);
+    let smooth_iter = f32(n) + 1.0 - log2(log2(length(z)));
 
-    let col_new = vec4(
+    return vec4<f32>(
         sin(smooth_iter/f),
         cos(smooth_iter/f),
         tan(smooth_iter/f),
-        0.0
+        1.0
     );
-
-        // col = col+col_new / f32(a);
-    // }
-
-    return col_new;
-    // return vec4<f32>(0.,0.,0.,0.);
 }
