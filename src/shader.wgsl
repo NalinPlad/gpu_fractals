@@ -39,31 +39,61 @@ fn map_range(from_range_min: f32, from_range_max: f32, to_range_min: f32, to_ran
 // Fragment shader
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
- 
-    let c = vec2<f32>(
-        map_range(0.0,f32(u.width),-u.scale,u.scale, in.clip_position.x) - u.x_off,
-        map_range(0.0,f32(u.width),-u.scale,u.scale, in.clip_position.y) - u.y_off
-    );
-    
-    var z = vec2<f32>(0.0, 0.0);
-    var n = 0;
+    let max_iterations = 1000;
+    let aa_samples = 1;
 
-    for (var i: i32 = 0; i < 1000; i++) {
-        if (length(z) >= 2.0) {
-            break;
+    var col = vec3(0.0);
+
+    for (var x_a: i32 = 0; x_a < aa_samples; x_a++){
+    for (var y_a: i32 = 0; y_a < aa_samples; y_a++){
+
+        let x_m = map_range(0.0,f32(u.width),-u.scale,u.scale, in.clip_position.x) - u.x_off; //+ (f32(x_a)*(u.x_velocity*(u.scale/10000.0)));
+        let y_m = map_range(0.0,f32(u.width),-u.scale,u.scale, in.clip_position.y) - u.y_off; //+ (f32(y_a)*(u.y_velocity*(u.scale/10000.0))); 
+            
+        var x_norm = 0.0;
+        var y_norm = 0.0;
+            
+
+        var iteration = 0;
+
+        while (abs(pow(x_norm,2.0)) + (pow(y_norm, 2.0)) < 4.0 && iteration < max_iterations) {
+            let x_tmp = pow(x_norm, 2.0) - pow(y_norm, 2.0) + x_m;
+
+            y_norm = 2.0 * x_norm * y_norm + y_m;
+            x_norm = x_tmp;
+
+            iteration += 1;
         }
+            
+        if(iteration == max_iterations) {
+            return vec4<f32>();
+        }
+            
+        let f = 20.0;
+        let smooth_iter = f32(iteration) + 1.0 - log( log(  pow(x_norm,2.0) + pow(y_norm, 2.0) ) ) / log(2.0);
 
-        z = vec2<f32>(z.x*z.x - z.y*z.y, 2.0*z.x*z.y) + c;
-        n = i;
+        // let col_new = vec4(
+        //     sin(smooth_iter/f),
+        //     cos(smooth_iter/f),
+        //     tan(smooth_iter/f),
+        //     0.0
+        // );
+
+        col += vec3(
+            sin(smooth_iter/f),
+            cos(smooth_iter/f),
+            tan(smooth_iter/f)
+        );
+
+    }
     }
 
-    let f = 20.0;
-    let smooth_iter = f32(n) + 1.0 - log2(log2(length(z)));
+    col /= f32(aa_samples*aa_samples);
 
-    return vec4<f32>(
-        sin(smooth_iter/f),
-        cos(smooth_iter/f),
-        tan(smooth_iter/f),
-        1.0
-    );
+        // col = col+col_new / f32(a);
+    // }
+
+    return vec4(col,0.0);
+    // return vec4<f32>(0.,0.,0.,0.);
+
 }

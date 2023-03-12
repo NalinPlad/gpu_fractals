@@ -263,6 +263,7 @@ impl ViewerController {
         // }
 
         println!("{:?} {} {}", uniforms,uniforms.scale,ly_mov);
+        println!("{}", (f64::sqrt(1.0/((uniforms.scale)) as f64)+500.0) as u128);
     }
 }
 
