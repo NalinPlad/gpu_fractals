@@ -39,7 +39,7 @@ fn map_range(from_range_min: f32, from_range_max: f32, to_range_min: f32, to_ran
 // Fragment shader
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    let max_iterations = 1000;
+    let max_iterations = 3000;
     let aa_samples = 1;
 
     var col = vec3(0.0);
@@ -80,9 +80,9 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
         // );
 
         col += vec3(
-            sin(smooth_iter/f),
+            tan(smooth_iter/f),
             cos(smooth_iter/f),
-            tan(smooth_iter/f)
+            sin(smooth_iter/f)
         );
 
     }
